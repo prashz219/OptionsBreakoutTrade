@@ -6,7 +6,7 @@ import datetime
 import os, signal
 pid = os.getpid()
 
-access_token = accesstoken # Update access token
+access_token = 'uJ1tUwq2eoke5ZaOL7s20MMuaqUSTBdA' # Update everyday
 bnf_fut_insttoken = 11983362
 nf_fut_insttoken = 11984386
 capital = 25000
@@ -22,7 +22,7 @@ nifty_base = 50 # need not change
 banknifty_base = 100 # need not change
 
 # Initialise
-api_key = apikey # update api key
+api_key = '8bb34ced6a8ku95j'
 kite = KiteConnect(api_key=api_key)
 kite.set_access_token(access_token)
 kws = KiteTicker(api_key, access_token)
@@ -30,7 +30,7 @@ kws = KiteTicker(api_key, access_token)
 # Fetch instruments
 instruments = kite.instruments(exchange='NFO')
 df = pd.DataFrame(instruments)
-df = (df[df['name'] == instrument]) # filter with banknifty
+df = (df[df['name'] == instrument]) # filter with instrument
 df = (df[df['expiry'] == datetime.date(year=expiry_year,month=expiry_month,day=expiry_day)]) # filter with expiry
 
 # To return strike value of nifty
@@ -51,7 +51,6 @@ def roundup(x,instrument):
 # Fetch CE trading symbol
 CE_tradingsymbol = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].tradingsymbol
 CE_tradingsymbol = CE_tradingsymbol.values[0]
-# CE_tradingsymbol = 'BANKNIFTY20D0331000CE'
 # print(CE_tradingsymbol)
 
 # Fetch CE instrument token
@@ -85,7 +84,6 @@ def on_ticks(ws, ticks):
             trigger['status'] = 'bought' # This appends bought when condition is met and stops duplicate orders being placed
             qty = calculate_qty(CE_instrument_token) # Calculate Quantity
             order_number = place_order_market_buy(CE_tradingsymbol,qty) # Place order at market price
-            # order_number = 201127002770261
             avg_buy_price = get_avg_buy_price_orderbook(order_number) # calculate avg buy price
             target_price = calculate_target_price(avg_buy_price) # Calculate target price
             target_order_number = place_target_order(CE_tradingsymbol,qty,target_price) # Place target order
@@ -98,13 +96,13 @@ def on_ticks(ws, ticks):
             print("BREAKOUT DOWNSIDE at price:", inst_ltp)
             trigger['status'] = 'sold'  # This appends sold when condition is met and stops duplicate orders being placed
             qty = calculate_qty(PE_instrument_token) # Calculate Quantity
-            order_number = place_order_market_buy(PE_instrument_token, qty)  # Place order at market price
+            order_number = place_order_market_buy(PE_tradingsymbol, qty)  # Place order at market price
             # order_number = 201127002770261
             avg_buy_price = get_avg_buy_price_orderbook(order_number)  # calculate avg buy price
             target_price = calculate_target_price(avg_buy_price)  # Calculate target price
-            target_order_number = place_target_order(PE_instrument_token, qty, target_price)  # Place target order
+            target_order_number = place_target_order(PE_tradingsymbol, qty, target_price)  # Place target order
             stoploss_price = calculate_sl_price(avg_buy_price)  # Calculate stoploss price
-            stoploss_order_number = place_stoploss_order(PE_instrument_token, qty, stoploss_price)  # Place stoploss order
+            stoploss_order_number = place_stoploss_order(PE_tradingsymbol, qty, stoploss_price)  # Place stoploss order
             check_target_sl_order_trigger(target_order_number,stoploss_order_number)  # Check if target hit or sl hit and exit
 
 
@@ -142,12 +140,12 @@ def calculate_sl_price(avg_buy_price):
 
 def place_target_order(tradingsymbol,qty,price):
     order_number = kite.place_order('regular', 'NFO', tradingsymbol, 'SELL', qty, 'MIS', 'LIMIT', price)
-    print(order_number + " Target order placed for " + tradingsymbol + " Sell Qty " + str(qty) + " at price " + str(qty))
+    print(order_number + " Target order placed for " + tradingsymbol + " Sell Qty " + str(qty) + " at price " + str(price))
     return order_number
 
 def place_stoploss_order(tradingsymbol,qty,sl_price):
-    order_number = kite.place_order('regular', 'NFO', tradingsymbol, 'SELL', qty, 'MIS', kite.ORDER_TYPE_SL, sl_price,trigger_price=(sl_price + 0.5))
-    print(order_number + " Stoploss order placed for " + tradingsymbol + " Sell Qty " + str(qty) + " at price " + str(qty))
+    order_number = kite.place_order('regular', 'NFO', tradingsymbol, 'SELL', qty, 'MIS', kite.ORDER_TYPE_SL, sl_price,trigger_price=(sl_price + 0.2))
+    print(order_number + " Stoploss order placed for " + tradingsymbol + " Sell Qty " + str(qty) + " at price " + str(sl_price))
     return order_number
 
 def check_target_sl_order_trigger(place_order_target,place_order_stoploss):
@@ -180,9 +178,11 @@ def on_connect(ws, response):
     if instrument == 'BANKNIFTY':
         ws.subscribe([bnf_fut_insttoken])
         ws.set_mode(ws.MODE_LTP, [bnf_fut_insttoken])
-    else:
+    elif instrument == 'NIFTY':
         ws.subscribe([nf_fut_insttoken])
         ws.set_mode(ws.MODE_LTP, [nf_fut_insttoken])
+    else:
+        print('Instrument is either NIFTY or BANKNIFTY, please update instrument')
 
 def on_close(ws, code, reason):
     # On connection close stop the main loop
