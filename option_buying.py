@@ -6,13 +6,13 @@ import datetime
 import os, signal
 pid = os.getpid()
 
-access_token = 'uJ1tUwq2eoke5ZaOL7s20MMuaqUSTBdA' # Update everyday
+access_token = 'Pt8lIQZtKeimBAeVdXy' # Update everyday
 bnf_fut_insttoken = 11983362
 nf_fut_insttoken = 11984386
-capital = 25000
+capital = 5000
 instrument = 'BANKNIFTY'
-upside_break = 29640
-downside_break = 29635
+upside_break = 29852
+downside_break = 29715
 target_percent = 0.02
 stoploss_percent = 0.05
 expiry_year = 2020 # Integer
@@ -22,7 +22,7 @@ nifty_base = 50 # need not change
 banknifty_base = 100 # need not change
 
 # Initialise
-api_key = '8bb34ced6a8ku95j'
+api_key = '8bb348ku95j' # Insert apikey here
 kite = KiteConnect(api_key=api_key)
 kite.set_access_token(access_token)
 kws = KiteTicker(api_key, access_token)
@@ -49,23 +49,27 @@ def roundup(x,instrument):
         return nifty_strike(x)
 
 # Fetch CE trading symbol
-CE_tradingsymbol = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].tradingsymbol
-CE_tradingsymbol = CE_tradingsymbol.values[0]
+# CE_tradingsymbol = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].tradingsymbol
+# CE_tradingsymbol = CE_tradingsymbol.values[0]
+CE_tradingsymbol = 'BANKNIFTY20D0330500CE'
 # print(CE_tradingsymbol)
 
 # Fetch CE instrument token
-CE_instrument_token = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].instrument_token
-CE_instrument_token = CE_instrument_token.values[0]
+# CE_instrument_token = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].instrument_token
+# CE_instrument_token = CE_instrument_token.values[0]
+CE_instrument_token = 10471682
 # print(CE_instrument_token)
 
 # Fetch PE trading symbol
-PE_tradingsymbol = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].tradingsymbol
-PE_tradingsymbol = PE_tradingsymbol.values[0]
+# PE_tradingsymbol = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].tradingsymbol
+# PE_tradingsymbol = PE_tradingsymbol.values[0]
+PE_tradingsymbol = 'BANKNIFTY20D0328500PE'
 # print(PE_tradingsymbol)
 
 # Fetch PE instrument token
-PE_instrument_token = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].instrument_token
-PE_instrument_token = PE_instrument_token.values[0]
+# PE_instrument_token = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].instrument_token
+# PE_instrument_token = PE_instrument_token.values[0]
+PE_instrument_token = 9306626
 # print(PE_instrument_token)
 
 trigger ={1: {}}
@@ -114,7 +118,7 @@ def calculate_qty(inst_token):
 
 def place_order_market_buy(tradingsymbol,qty):
     place_order = kite.place_order('regular', 'NFO', tradingsymbol, 'BUY', qty, 'MIS', 'MARKET')
-    print(place_order + " Buy order placed for " + tradingsymbol + " Qty " + str(qty) + " at price " + str(get_avg_buy_price_orderbook(tradingsymbol)))
+    print(place_order + " Buy order placed for " + tradingsymbol + " Qty " + str(qty) + " at price " + str(get_avg_buy_price_orderbook(place_order)))
     return place_order
 
 # def get_avg_buy_price_positions(tradingsymbol):
