@@ -6,13 +6,13 @@ import datetime
 import os, signal
 pid = os.getpid()
 
-access_token = 'Pt8lIQZtKeimBAeVdXy' # Update everyday
+access_token = 'Pt8lIQZtF2I23BAeVdXy' # Update everyday
 bnf_fut_insttoken = 11983362
 nf_fut_insttoken = 11984386
-capital = 5000
+capital = 25000
 instrument = 'BANKNIFTY'
-upside_break = 29852
-downside_break = 29715
+upside_break = 29895
+downside_break = 29805
 target_percent = 0.02
 stoploss_percent = 0.05
 expiry_year = 2020 # Integer
@@ -22,7 +22,7 @@ nifty_base = 50 # need not change
 banknifty_base = 100 # need not change
 
 # Initialise
-api_key = '8bb348ku95j' # Insert apikey here
+api_key = '8bb5j'
 kite = KiteConnect(api_key=api_key)
 kite.set_access_token(access_token)
 kws = KiteTicker(api_key, access_token)
@@ -51,21 +51,25 @@ def roundup(x,instrument):
 # Fetch CE trading symbol
 CE_tradingsymbol = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].tradingsymbol
 CE_tradingsymbol = CE_tradingsymbol.values[0]
+# CE_tradingsymbol = 'BANKNIFTY20D0330500CE'
 # print(CE_tradingsymbol)
 
 # Fetch CE instrument token
 CE_instrument_token = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].instrument_token
 CE_instrument_token = CE_instrument_token.values[0]
+# CE_instrument_token = 10471682
 # print(CE_instrument_token)
 
 # Fetch PE trading symbol
 PE_tradingsymbol = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].tradingsymbol
 PE_tradingsymbol = PE_tradingsymbol.values[0]
+# PE_tradingsymbol = 'BANKNIFTY20D0328500PE'
 # print(PE_tradingsymbol)
 
 # Fetch PE instrument token
 PE_instrument_token = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].instrument_token
 PE_instrument_token = PE_instrument_token.values[0]
+# PE_instrument_token = 9306626
 # print(PE_instrument_token)
 
 trigger ={1: {}}
@@ -82,7 +86,7 @@ def on_ticks(ws, ticks):
         if ((inst_ltp >= upside_break) and ("bought" not in trigger[1].values())):
             print('BREAKOUT UPSIDE at price:', inst_ltp)
             trigger['status'] = 'bought' # This appends bought when condition is met and stops duplicate orders being placed
-            qty = calculate_qty(CE_instrument_token) # Calculate Quantity
+            qty = calculate_qty(CE_instrument_token,instrument) # Calculate Quantity
             order_number = place_order_market_buy(CE_tradingsymbol,qty) # Place order at market price
             avg_buy_price = get_avg_buy_price_orderbook(order_number) # calculate avg buy price
             target_price = calculate_target_price(avg_buy_price) # Calculate target price
@@ -95,7 +99,7 @@ def on_ticks(ws, ticks):
         elif ((inst_ltp <= downside_break) and ("sold" not in trigger[1].values())):
             print("BREAKOUT DOWNSIDE at price:", inst_ltp)
             trigger['status'] = 'sold'  # This appends sold when condition is met and stops duplicate orders being placed
-            qty = calculate_qty(PE_instrument_token) # Calculate Quantity
+            qty = calculate_qty(PE_instrument_token,instrument) # Calculate Quantity
             order_number = place_order_market_buy(PE_tradingsymbol, qty)  # Place order at market price
             # order_number = 201127002770261
             avg_buy_price = get_avg_buy_price_orderbook(order_number)  # calculate avg buy price
@@ -106,10 +110,14 @@ def on_ticks(ws, ticks):
             check_target_sl_order_trigger(target_order_number,stoploss_order_number)  # Check if target hit or sl hit and exit
 
 
-def calculate_qty(inst_token):
+def calculate_qty(inst_token,instrument):
+    if instrument == 'BANKNIFTY':
+        lotsize = 25
+    else:
+        lotsize = 75
     PE_info = kite.ltp(inst_token)
     PE_ltp = PE_info[str(inst_token)]['last_price']
-    qty = (round((capital / PE_ltp) / 25)) * 25
+    qty = (round((capital / PE_ltp) / lotsize)) * lotsize
     return qty
 
 def place_order_market_buy(tradingsymbol,qty):
@@ -126,6 +134,13 @@ def place_order_market_buy(tradingsymbol,qty):
 
 def get_avg_buy_price_orderbook(order_number):
     df_order_details = pd.DataFrame(kite.order_trades(order_number), columns=['average_price'])
+    CE_buy_avg_price = df_order_details.mean(axis=0)[0]
+    avg_buy_price = round(CE_buy_avg_price, 1)
+    return avg_buy_price
+
+def get_avg_buy_price_orderbook1(order_number):
+    df_order_details = pd.DataFrame(kite.order_trades(order_number), columns=['average_price'])
+    print(df_order_details)
     CE_buy_avg_price = df_order_details.mean(axis=0)[0]
     avg_buy_price = round(CE_buy_avg_price, 1)
     return avg_buy_price
