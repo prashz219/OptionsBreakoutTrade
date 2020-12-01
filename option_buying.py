@@ -49,27 +49,23 @@ def roundup(x,instrument):
         return nifty_strike(x)
 
 # Fetch CE trading symbol
-# CE_tradingsymbol = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].tradingsymbol
-# CE_tradingsymbol = CE_tradingsymbol.values[0]
-CE_tradingsymbol = 'BANKNIFTY20D0330500CE'
+CE_tradingsymbol = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].tradingsymbol
+CE_tradingsymbol = CE_tradingsymbol.values[0]
 # print(CE_tradingsymbol)
 
 # Fetch CE instrument token
-# CE_instrument_token = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].instrument_token
-# CE_instrument_token = CE_instrument_token.values[0]
-CE_instrument_token = 10471682
+CE_instrument_token = df[(df['strike'] == roundup(upside_break,instrument)) & (df['instrument_type'] == 'CE')].instrument_token
+CE_instrument_token = CE_instrument_token.values[0]
 # print(CE_instrument_token)
 
 # Fetch PE trading symbol
-# PE_tradingsymbol = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].tradingsymbol
-# PE_tradingsymbol = PE_tradingsymbol.values[0]
-PE_tradingsymbol = 'BANKNIFTY20D0328500PE'
+PE_tradingsymbol = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].tradingsymbol
+PE_tradingsymbol = PE_tradingsymbol.values[0]
 # print(PE_tradingsymbol)
 
 # Fetch PE instrument token
-# PE_instrument_token = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].instrument_token
-# PE_instrument_token = PE_instrument_token.values[0]
-PE_instrument_token = 9306626
+PE_instrument_token = df[(df['strike'] == roundup(downside_break,instrument)) & (df['instrument_type'] == 'PE')].instrument_token
+PE_instrument_token = PE_instrument_token.values[0]
 # print(PE_instrument_token)
 
 trigger ={1: {}}
