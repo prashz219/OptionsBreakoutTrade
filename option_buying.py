@@ -3,10 +3,12 @@ from kiteconnect import KiteTicker
 from kiteconnect import KiteConnect
 import pandas as pd
 import datetime
-import os, signal
+import os
+import signal
 pid = os.getpid()
 
-access_token = 'Pt8lIQZtF2I23BAeVdXy' # Update everyday
+# Update everyday
+access_token = 'Pt8lIQZtF2I23IGm9qpdoKeimBAeVdXy'
 bnf_fut_insttoken = 11983362
 nf_fut_insttoken = 11984386
 capital = 25000
@@ -22,7 +24,7 @@ nifty_base = 50 # need not change
 banknifty_base = 100 # need not change
 
 # Initialise
-api_key = '8bb5j'
+api_key = '8bb34ced6a8ku95j'
 kite = KiteConnect(api_key=api_key)
 kite.set_access_token(access_token)
 kws = KiteTicker(api_key, access_token)
@@ -87,27 +89,32 @@ def on_ticks(ws, ticks):
             print('BREAKOUT UPSIDE at price:', inst_ltp)
             trigger['status'] = 'bought' # This appends bought when condition is met and stops duplicate orders being placed
             qty = calculate_qty(CE_instrument_token,instrument) # Calculate Quantity
-            order_number = place_order_market_buy(CE_tradingsymbol,qty) # Place order at market price
-            avg_buy_price = get_avg_buy_price_orderbook(order_number) # calculate avg buy price
-            target_price = calculate_target_price(avg_buy_price) # Calculate target price
-            target_order_number = place_target_order(CE_tradingsymbol,qty,target_price) # Place target order
-            stoploss_price = calculate_sl_price(avg_buy_price) # Calculate stoploss price
-            stoploss_order_number = place_stoploss_order(CE_tradingsymbol,qty,stoploss_price) # Place stoploss order
-            check_target_sl_order_trigger(target_order_number,stoploss_order_number) # Check if target hit or sl hit and exit
+            order_number = place_order_limit_buy(CE_tradingsymbol,CE_instrument_token,qty) # Place order at market price
+            order_status = kite.order_history(order_number)
+            order_status = order_status[-1]['status']
+            if order_status == 'COMPLETE':
+                avg_buy_price = get_avg_buy_price_orderbook(order_number) # calculate avg buy price
+                target_price = calculate_target_price(avg_buy_price) # Calculate target price
+                target_order_number = place_target_order(CE_tradingsymbol,qty,target_price) # Place target order
+                stoploss_price = calculate_sl_price(avg_buy_price) # Calculate stoploss price
+                stoploss_order_number = place_stoploss_order(CE_tradingsymbol,qty,stoploss_price) # Place stoploss order
+                check_target_sl_order_trigger(target_order_number,stoploss_order_number) # Check if target hit or sl hit and exit
 
         # If the condition is met downside
         elif ((inst_ltp <= downside_break) and ("sold" not in trigger[1].values())):
             print("BREAKOUT DOWNSIDE at price:", inst_ltp)
             trigger['status'] = 'sold'  # This appends sold when condition is met and stops duplicate orders being placed
             qty = calculate_qty(PE_instrument_token,instrument) # Calculate Quantity
-            order_number = place_order_market_buy(PE_tradingsymbol, qty)  # Place order at market price
-            # order_number = 201127002770261
-            avg_buy_price = get_avg_buy_price_orderbook(order_number)  # calculate avg buy price
-            target_price = calculate_target_price(avg_buy_price)  # Calculate target price
-            target_order_number = place_target_order(PE_tradingsymbol, qty, target_price)  # Place target order
-            stoploss_price = calculate_sl_price(avg_buy_price)  # Calculate stoploss price
-            stoploss_order_number = place_stoploss_order(PE_tradingsymbol, qty, stoploss_price)  # Place stoploss order
-            check_target_sl_order_trigger(target_order_number,stoploss_order_number)  # Check if target hit or sl hit and exit
+            order_number = place_order_limit_buy(PE_tradingsymbol,PE_instrument_token,qty)  # Place order at market price
+            order_status = kite.order_history(order_number)
+            order_status = order_status[-1]['status']
+            if order_status == 'COMPLETE':
+                avg_buy_price = get_avg_buy_price_orderbook(order_number)  # calculate avg buy price
+                target_price = calculate_target_price(avg_buy_price)  # Calculate target price
+                target_order_number = place_target_order(PE_tradingsymbol, qty, target_price)  # Place target order
+                stoploss_price = calculate_sl_price(avg_buy_price)  # Calculate stoploss price
+                stoploss_order_number = place_stoploss_order(PE_tradingsymbol, qty, stoploss_price)  # Place stoploss order
+                check_target_sl_order_trigger(target_order_number,stoploss_order_number)  # Check if target hit or sl hit and exit
 
 
 def calculate_qty(inst_token,instrument):
@@ -120,8 +127,9 @@ def calculate_qty(inst_token,instrument):
     qty = (round((capital / PE_ltp) / lotsize)) * lotsize
     return qty
 
-def place_order_market_buy(tradingsymbol,qty):
-    place_order = kite.place_order('regular', 'NFO', tradingsymbol, 'BUY', qty, 'MIS', 'MARKET')
+def place_order_limit_buy(tradingsymbol,instrument_token,qty):
+    # place_order = kite.place_order('regular', 'NFO', tradingsymbol, 'BUY', qty, 'MIS', 'MARKET')
+    place_order = kite.place_order('regular', 'NFO', tradingsymbol, 'BUY', qty, 'MIS', 'LIMIT',price=get_limit_price(instrument_token))
     print(place_order + " Buy order placed for " + tradingsymbol + " Qty " + str(qty) + " at price " + str(get_avg_buy_price_orderbook(place_order)))
     return place_order
 
@@ -211,4 +219,19 @@ kws.on_close = on_close
 
 # Infinite loop on the main thread. Nothing after this will run.
 # You have to use the pre-defined callbacks to manage subscriptions.
-kws.connect()
+# kws.connect()
+# get 1min historical data and place order with 0.01% limit at close of previous candle. Process SL or target only if triggered.
+
+def get_limit_price(instrument_token):
+    current_date = datetime.datetime.now()
+    current_time = current_date.strftime("%Y-%m-%d %H:%M:%S")
+    previous_date = current_date - datetime.timedelta(minutes=1)
+    previous_time = previous_date.strftime("%Y-%m-%d %H:%M:%S")
+    previous_candle_close = kite.historical_data(instrument_token, from_date=previous_time, to_date=current_time, interval='minute')
+    previous_candle_close = previous_candle_close[0]
+    previous_candle_close = previous_candle_close['close']
+    limit_price = round((previous_candle_close + (previous_candle_close * 0.002)), 1)
+    return limit_price
+
+# print(get_limit_price(10606850))
+
