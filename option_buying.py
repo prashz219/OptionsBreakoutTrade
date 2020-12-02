@@ -8,7 +8,7 @@ import signal
 pid = os.getpid()
 
 # Update everyday
-access_token = 'Pt8lIQZtF2I23IGm9qpdoKeimBAeVdXy'
+access_token = 'Pt8lIQZtF2ImBAeVdXy'
 bnf_fut_insttoken = 11983362
 nf_fut_insttoken = 11984386
 capital = 25000
@@ -24,7 +24,7 @@ nifty_base = 50 # need not change
 banknifty_base = 100 # need not change
 
 # Initialise
-api_key = '8bb34ced6a8ku95j'
+api_key = '85j'
 kite = KiteConnect(api_key=api_key)
 kite.set_access_token(access_token)
 kws = KiteTicker(api_key, access_token)
